@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Haulage QA Runbook</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+      rel="stylesheet">
+    <style>
+      :root {
+        --bg: #f5f6f9;
+        --surface: #ffffff;
+        --surface-2: #eef0f5;
+        --ink: #171b24;
+        --muted: #5b6472;
+        --accent: #2953d9;
+        --accent-soft: #e8edfb;
+        --accent-ink: #1c3aa0;
+        --pass: #1a8f4c;
+        --pass-soft: #e4f6ec;
+        --fail: #c8402c;
+        --fail-soft: #fbe9e6;
+        --pending: #9a6b12;
+        --pending-soft: #faf1e0;
+        --border: #e1e4ea;
+        --border-strong: #c9ced9;
+        --font-display: "Archivo", system-ui, sans-serif;
+        --font-body: "Public Sans", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0d1117;
+          --surface: #141a24;
+          --surface-2: #1a2130;
+          --ink: #e7ebf2;
+          --muted: #8a94a6;
+          --accent: #6c93ff;
+          --accent-soft: #1c2740;
+          --accent-ink: #a9c0ff;
+          --pass: #3ecb84;
+          --pass-soft: #123222;
+          --fail: #f0776a;
+          --fail-soft: #3a1c1a;
+          --pending: #e0b64a;
+          --pending-soft: #332a12;
+          --border: #26303f;
+          --border-strong: #37455a;
+        }
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #0d1117;
+        --surface: #141a24;
+        --surface-2: #1a2130;
+        --ink: #e7ebf2;
+        --muted: #8a94a6;
+        --accent: #6c93ff;
+        --accent-soft: #1c2740;
+        --accent-ink: #a9c0ff;
+        --pass: #3ecb84;
+        --pass-soft: #123222;
+        --fail: #f0776a;
+        --fail-soft: #3a1c1a;
+        --pending: #e0b64a;
+        --pending-soft: #332a12;
+        --border: #26303f;
+        --border-strong: #37455a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 14.5px;
+        line-height: 1.55;
+        padding-inline: 16px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        text-wrap: balance;
+        margin: 0;
+      }
+
+      code,
+      .mono {
+        font-family: var(--font-mono);
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      button {
+        font-family: var(--font-body);
+      }
+
+      img {
+        max-width: 100%;
+      }
+
+      ::selection {
+        background: var(--accent-soft);
+      }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--bg);
+        padding-block: 14px 10px;
+        margin-inline: -16px;
+        padding-inline: 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 13px;
+        flex-shrink: 0;
+        letter-spacing: .02em;
+      }
+
+      .brand h1 {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -.01em;
+      }
+
+      .brand p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .progress-stat {
+        text-align: right;
+      }
+
+      .progress-stat .num {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 20px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .progress-stat .lbl {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+      }
+
+      .progress-bar {
+        width: 140px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--surface-2);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+
+      .progress-bar>div {
+        height: 100%;
+        background: var(--pass);
+        transition: width .25s ease;
+      }
+
+      .topbar-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 7px 12px;
+        border-radius: 7px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background .12s, border-color .12s;
+      }
+
+      .btn:hover {
+        background: var(--surface-2);
+      }
+
+      .btn:focus-visible,
+      a:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .btn.accent {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .btn.accent:hover {
+        filter: brightness(1.06);
+      }
+
+      .name-input {
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--border-strong);
+        border-radius: 7px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 12.5px;
+        width: 140px;
+      }
+
+      /* ---------- Connection status ---------- */
+      .conn-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 99px;
+        border: 1px solid var(--border-strong);
+      }
+
+      .conn-pill .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 99px;
+        background: var(--muted);
+      }
+
+      .conn-pill[data-state="connected"] {
+        background: var(--pass-soft);
+        color: var(--pass);
+        border-color: transparent;
+      }
+
+      .conn-pill[data-state="connected"] .dot {
+        background: var(--pass);
+      }
+
+      .conn-pill[data-state="local"] {
+        background: var(--pending-soft);
+        color: var(--pending);
+        border-color: transparent;
+      }
+
+      .conn-pill[data-state="local"] .dot {
+        background: var(--pending);
+      }
+
+      .conn-pill[data-state="error"] {
+        background: var(--fail-soft);
+        color: var(--fail);
+        border-color: transparent;
+      }
+
+      .conn-pill[data-state="error"] .dot {
+        background: var(--fail);
+      }
+
+      .setup-banner {
+        max-width: 1240px;
+        margin: 16px auto 0;
+        padding: 14px 18px;
+        border-radius: 10px;
+        background: var(--pending-soft);
+        border: 1px solid color-mix(in srgb, var(--pending) 35%, var(--border));
+        font-size: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .setup-banner b {
+        color: var(--pending);
+      }
+
+      .setup-banner ol {
+        margin: 4px 0 0;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .setup-banner pre {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px 12px;
+        overflow-x: auto;
+        font-size: 11.5px;
+        margin: 4px 0;
+      }
+
+      /* ---------- Layout ---------- */
+      .layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        padding-block: 18px 60px;
+        max-width: 1240px;
+        margin-inline: auto;
+      }
+
+      .rail {
+        position: sticky;
+        top: 78px;
+        width: 250px;
+        flex-shrink: 0;
+        max-height: calc(100vh - 96px);
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .rail-section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--muted);
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+
+      .rail ol {
+        list-style: none;
+        margin: 0 0 18px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .rail li a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: var(--ink);
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12.5px;
+        font-weight: 500;
+      }
+
+      .rail li a:hover {
+        background: var(--surface-2);
+      }
+
+      .rail li a .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 99px;
+        background: var(--border-strong);
+        flex-shrink: 0;
+      }
+
+      .rail li a.all-pass .dot {
+        background: var(--pass);
+      }
+
+      .rail li a.has-fail .dot {
+        background: var(--fail);
+      }
+
+      .rail li a .rn {
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+
+      .filters {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .filter-btn {
+        text-align: left;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12.5px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .filter-btn.active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 36px;
+      }
+
+      /* ---------- Data reference panel ---------- */
+      .databox {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+      }
+
+      .databox summary {
+        cursor: pointer;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 15px;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .databox summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .databox summary .chev {
+        transition: transform .15s;
+      }
+
+      .databox[open] summary .chev {
+        transform: rotate(90deg);
+      }
+
+      .data-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .data-card {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 11px 13px;
+        background: var(--surface-2);
+      }
+
+      .data-card h4 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+        margin: 0 0 6px;
+        font-weight: 700;
+      }
+
+      .data-card dl {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .data-card dl div {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12.5px;
+      }
+
+      .data-card dt {
+        color: var(--muted);
+      }
+
+      .data-card dd {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        text-align: right;
+      }
+
+      /* ---------- Phase sections ---------- */
+      .phase {
+        scroll-margin-top: 78px;
+      }
+
+      .phase-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px 14px;
+        margin-bottom: 4px;
+      }
+
+      .phase-num {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 600;
+        background: var(--accent-soft);
+        padding: 2px 8px;
+        border-radius: 99px;
+      }
+
+      .phase h2 {
+        font-size: 21px;
+      }
+
+      .phase-deps {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .phase-deps b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .phase-intro {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 6px 0 16px;
+        max-width: 70ch;
+      }
+
+      .cases {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .case {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+
+      .case[data-status="pass"] {
+        border-color: color-mix(in srgb, var(--pass) 45%, var(--border));
+      }
+
+      .case[data-status="fail"] {
+        border-color: color-mix(in srgb, var(--fail) 45%, var(--border));
+      }
+
+      .case-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .case-id {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        flex-shrink: 0;
+        width: 52px;
+      }
+
+      .case-title {
+        font-weight: 600;
+        font-size: 13.5px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .case-owner {
+        font-size: 11px;
+        color: var(--muted);
+        flex-shrink: 0;
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        padding: 3px 9px;
+        border-radius: 99px;
+        flex-shrink: 0;
+        background: var(--surface-2);
+        color: var(--muted);
+      }
+
+      .case[data-status="pass"] .status-pill {
+        background: var(--pass-soft);
+        color: var(--pass);
+      }
+
+      .case[data-status="fail"] .status-pill {
+        background: var(--fail-soft);
+        color: var(--fail);
+      }
+
+      .case-caret {
+        color: var(--muted);
+        flex-shrink: 0;
+        transition: transform .15s;
+      }
+
+      .case.open .case-caret {
+        transform: rotate(90deg);
+      }
+
+      .case-body {
+        display: none;
+        padding: 0 16px 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .case.open .case-body {
+        display: block;
+      }
+
+      .case-body-inner {
+        padding-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .case-cols {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+
+      @media (max-width:720px) {
+        .case-cols {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .steps {
+        margin: 0;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 13px;
+      }
+
+      .steps li::marker {
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+      }
+
+      .expected {
+        background: var(--accent-soft);
+        border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 12.8px;
+      }
+
+      .expected h5 {
+        margin: 0 0 5px;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--accent-ink);
+        font-weight: 700;
+      }
+
+      .expected p {
+        margin: 0;
+        color: var(--ink);
+      }
+
+      .case-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border-strong);
+        border-radius: 7px;
+        overflow: hidden;
+      }
+
+      .seg button {
+        border: 0;
+        background: var(--surface);
+        color: var(--muted);
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        border-right: 1px solid var(--border-strong);
+      }
+
+      .seg button:last-child {
+        border-right: 0;
+      }
+
+      .seg button.on[data-v="pass"] {
+        background: var(--pass);
+        color: #fff;
+      }
+
+      .seg button.on[data-v="fail"] {
+        background: var(--fail);
+        color: #fff;
+      }
+
+      .seg button.on[data-v="pending"] {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      .notes {
+        flex: 1;
+        min-width: 160px;
+        font-family: var(--font-body);
+        font-size: 12.5px;
+        padding: 6px 9px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: var(--surface);
+        color: var(--ink);
+      }
+
+      .notes:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      .case-meta {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      footer {
+        max-width: 1240px;
+        margin: 0 auto 50px;
+        padding-inline: 0;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+
+      @media (max-width:900px) {
+        .rail {
+          display: none;
+        }
+
+        .layout {
+          padding-inline: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">QA</div>
+        <div>
+          <h1>Haulage QA Runbook</h1>
+          <p>IBS Haulage Management System &middot; dependency-ordered manual test script</p>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <span class="conn-pill" id="connPill" data-state="local"><span class="dot"></span><span
+            id="connLabel">Checking&hellip;</span></span>
+        <input class="name-input" id="nameInput" type="text" placeholder="Your name">
+        <div class="progress-stat">
+          <div class="num"><span id="passCount">0</span>/<span id="totalCount">0</span></div>
+          <div class="lbl">checks passed</div>
+        </div>
+        <div class="progress-bar">
+          <div id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" id="resetBtn" type="button">Reset all (everyone)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-banner" id="setupBanner" style="display:none;">
+      <div><b>Not connected to a shared backend yet</b> &mdash; progress below is saved only in this browser and won't
+        be visible to your colleagues.</div>
+      <div>To share results live with your team:</div>
+      <ol>
+        <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>
+          (Dashboard &rarr; New Project).</li>
+        <li>In the SQL Editor, run:
+          <pre id="setupSql"></pre>
+        </li>
+        <li>In Database &rarr; Replication, turn on realtime for the <span class="mono">qa_results</span> table (or run
+          <span class="mono">alter publication supabase_realtime add table qa_results;</span> in the SQL editor).</li>
+        <li>In Project Settings &rarr; API, copy your <b>Project URL</b> and <b>anon public</b> key.</li>
+        <li>Open this HTML file in a text editor, find the <span class="mono">SUPABASE_URL</span> / <span
+            class="mono">SUPABASE_ANON_KEY</span> lines near the top of the <span class="mono">&lt;script&gt;</span> at
+          the bottom, paste your values in, save, and re-share this file with your team.</li>
+      </ol>
+    </div>
+
+    <div class="layout">
+      <nav class="rail" aria-label="Phases">
+        <p class="rail-section-title">Phases</p>
+        <ol id="railList"></ol>
+        <p class="rail-section-title">Filter</p>
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all" type="button">All checks</button>
+          <button class="filter-btn" data-filter="pending" type="button">Pending only</button>
+          <button class="filter-btn" data-filter="fail" type="button">Failed only</button>
+        </div>
+      </nav>
+
+      <main>
+        <section class="databox" id="dataRef">
+          <details open>
+            <summary><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="3">
+                <path d="M9 6l6 6-6 6" />
+              </svg> Test data reference</summary>
+            <p style="color:var(--muted); font-size:12.8px; margin:10px 0 0; max-width:70ch;">
+              Use these exact names throughout so later phases line up with what earlier phases created.
+              Codes marked <span class="mono">auto</span> are generated by the app (<span
+                class="mono">REQ/QUO/TRP/INV/PAY/CLT-YYYY-NNNN</span>) &mdash; write down the real ones as you go.
+            </p>
+            <div class="data-grid" id="dataGrid"></div>
+          </details>
+        </section>
+
+        <div id="phases"></div>
+      </main>
+    </div>
+
+    <footer>
+      Results marked here are shared live with everyone using this file once a Supabase backend is connected (see the
+      banner above if you haven't set one up).
+      Re-running the app's own seed/migration resets the <em>application's</em> data but not this checklist &mdash; use
+      "Reset all" above when your team starts a fresh pass.
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ====================================================================
+        // Supabase connection — fill these in after running the setup SQL
+        // (see the on-page banner, or the SETUP_SQL string below) and creating
+        // a project at supabase.com. Leave them as-is to run in local-only mode.
+        // ====================================================================
+        var SUPABASE_URL = "https://ydqvyicyjbptwqmtlkjm.supabase.co";       // e.g. "https://abcdefgh.supabase.co"
+        var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcXZ5aWN5amJwdHdxbXRsa2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDYwMDcsImV4cCI6MjEwNTE4MjAwN30.3aLv80eW_o6QtS1NEWoiYugNWw3v9T4iPPr0XRf0ENw";      // Project Settings -> API -> anon public
+        var TABLE = "qa_results";
+
+        var SETUP_SQL =
+          "create table if not exists qa_results (\n" +
+          "  test_id text primary key,\n" +
+          "  status text not null default 'pending' check (status in ('pending','pass','fail')),\n" +
+          "  notes text not null default '',\n" +
+          "  updated_by text,\n" +
+          "  updated_at timestamptz not null default now()\n" +
+          ");\n\n" +
+          "alter table qa_results enable row level security;\n\n" +
+          "create policy \"qa_results_select\" on qa_results for select using (true);\n" +
+          "create policy \"qa_results_insert\" on qa_results for insert with check (true);\n" +
+          "create policy \"qa_results_update\" on qa_results for update using (true);\n" +
+          "create policy \"qa_results_delete\" on qa_results for delete using (true);\n\n" +
+          "alter publication supabase_realtime add table qa_results;";
+
+        document.getElementById("setupSql").textContent = SETUP_SQL;
+
+        var isConfigured = SUPABASE_URL.indexOf("YOUR_SUPABASE") === -1 && SUPABASE_ANON_KEY.indexOf("YOUR_SUPABASE") === -1;
+        var sb = null;
+        if (isConfigured && window.supabase && window.supabase.createClient) {
+          try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { sb = null; }
+        }
+
+        var connPill = document.getElementById("connPill");
+        var connLabel = document.getElementById("connLabel");
+        function setConn(state, label) {
+          connPill.dataset.state = state;
+          connLabel.textContent = label;
+        }
+
+        if (!isConfigured) {
+          setConn("local", "Local only — not shared");
+          document.getElementById("setupBanner").style.display = "flex";
+        } else {
+          setConn("local", "Connecting…");
+        }
+
+        /* ---------- Tester name (per-browser convenience only) ---------- */
+        var nameInput = document.getElementById("nameInput");
+        try { nameInput.value = localStorage.getItem("haulage-qa-name") || ""; } catch (e) { }
+        nameInput.addEventListener("input", function () {
+          try { localStorage.setItem("haulage-qa-name", nameInput.value); } catch (e) { }
+        });
+        function testerName() {
+          return (nameInput.value || "").trim() || "Anonymous";
+        }
+
+        var DATA_REF = [
+          { h: "Staff accounts", rows: [["Admin", "admin / Admin@1234"], ["Finance", "qa_finance / (set in P3)"], ["Operations", "qa_ops / (set in P3)"]] },
+          { h: "Locations", rows: [["Origin", "Tema Port, Tema"], ["Waypoint", "Kumasi Central Depot, Kumasi"], ["Waypoint", "Takoradi Port, Takoradi"]] },
+          { h: "Service type", rows: [["Name", "Container Haulage"], ["Rate", "150.00 / ton"]] },
+          { h: "Trucks", rows: [["Truck 1", "GT-4521-24 (kept)"], ["Truck 2", "GT-8890-24 (kept)"], ["Truck 3", "GT-0000-24 (deleted in P7)"]] },
+          { h: "Drivers", rows: [["Driver 1", "Kwabena Asante (kept)"], ["Driver 2", "Yaw Boateng (kept)"], ["Driver 3", "Throwaway (deleted in P8)"]] },
+          { h: "Accounts (seeded)", rows: [["Cash", "Office Cash"], ["Mobile money", "MTN Mobile Money"], ["Bank", "Main Bank Account"]] },
+          { h: "Expense categories (seeded, system)", rows: [["9 total", "Fuel, Toll, Meal, Repair, Loading/Offloading, Tyre, Driver Allowance, Ferry/Crossing, Other"]] },
+          { h: "Client A", rows: [["Company", "Alpha Logistics Ltd"], ["Code", "auto CLT-2026-0001"], ["Portal user", "Ama Owusu"]] },
+          { h: "Client B (portal isolation only)", rows: [["Company", "Beta Freight Co"], ["Code", "auto CLT-2026-0002"], ["Portal user", "Kojo Mensah"]] },
+          { h: "Trips", rows: [["Trip A", "Tema→Kumasi, via Request, full lifecycle"], ["Trip B", "Tema→Takoradi, direct, reassigned mid-flight"], ["Trip C", "Tema→Kumasi, direct, cancelled w/ expense"], ["Trip D", "Kumasi→Takoradi, direct, deleted empty"]] },
+          { h: "Invoices", rows: [["Invoice 1", "from Trip A — issued, partially paid"], ["Invoice 2", "from Trip B — issued, then cancelled"], ["Invoice 3", "from Trip B again — draft, deleted"]] }
+        ];
+
+        var PHASES = [
+          {
+            id: "p0", num: "0", title: "Environment sanity", deps: [],
+            intro: "Confirms the box you're testing on is actually in the state the rest of this script assumes. Run once per fresh install/reset.",
+            tests: [
+              {
+                t: "Fresh install boots clean", steps: [
+                  "Run <code>composer install</code>, copy <code>.env</code>, <code>php artisan key:generate</code>",
+                  "Run <code>php artisan storage:link</code>",
+                  "Run <code>php artisan migrate --seed</code>",
+                  "Visit <code>/login</code> and <code>/portal/login</code>"],
+                exp: "Both pages return 200 with the IBS Haulage branding, no errors in <code>storage/logs/laravel.log</code>."
+              },
+              {
+                t: "Seed data present", steps: [
+                  "Log in as admin (see Phase 1)",
+                  "Open Accounts index",
+                  "Open Settings",
+                  "Open Expense Categories"],
+                exp: "3 accounts exist (Office Cash, MTN Mobile Money, Main Bank Account) all at GHS 0.00 balance. Settings shows empty org fields and Default Currency = GHS. 9 system expense categories are listed."
+              }
+            ]
+          },
+          {
+            id: "p1", num: "1", title: "Staff auth &amp; session security", deps: [],
+            intro: "Nothing downstream works without a staff session, so this goes first. Covers login, forced password change, lockout, and the two session-integrity middlewares.",
+            tests: [
+              {
+                t: "First login forces password change", steps: [
+                  "Go to /login, sign in with <span class=mono>admin / Admin@1234</span>"],
+                exp: "Redirected to /change-password, not the dashboard — <code>must_change_password</code> is true on the seeded admin."
+              },
+              {
+                t: "Password complexity is enforced", steps: [
+                  "On the change-password form, try <span class=mono>abc123</span> (too short, no uppercase)",
+                  "Then submit <span class=mono>Adm1nPass</span> (8+ chars, mixed case, a number)"],
+                exp: "First attempt shows a validation error and stays on the page. Second succeeds and redirects to /dashboard."
+              },
+              {
+                t: "Logout clears the session", steps: ["Click the user menu &rarr; Log out"],
+                exp: "Redirected to /login. Hitting /dashboard directly afterward redirects back to /login."
+              },
+              {
+                t: "Failed-login lockout (5 / 15 min)", steps: [
+                  "At /login, submit the wrong password for <span class=mono>admin</span> five times in a row",
+                  "Note the remaining-attempts count shown after each failure"],
+                exp: "Attempts 1–4 show “N attempt(s) remaining before your account is temporarily locked.” Attempt 5 (and any further attempt inside 15 minutes, even with the correct password) shows “Too many login attempts. Please try again in 15 minute(s).”"
+              },
+              {
+                t: "Concurrent session guard", steps: [
+                  "Log in as admin in Browser A",
+                  "Log in as admin again in Browser B (or a private window)",
+                  "Go back to Browser A and click any link"],
+                exp: "Browser A is force-logged-out with “You have been logged out because your account was signed in on another device.” Browser B stays logged in."
+              },
+              {
+                t: "Idle session timeout", steps: [
+                  "Log in, then leave the tab idle for 16+ minutes (or lower <span class=mono>SessionTimeout</span>'s threshold temporarily for the test)",
+                  "Click any nav link"],
+                exp: "Redirected to /login instead of the page you clicked — the 15-minute idle timeout fired server-side."
+              }
+            ]
+          },
+          {
+            id: "p2", num: "2", title: "Settings", deps: ["Phase 1 (admin session)"],
+            intro: "Single-page org configuration. No other module depends on Settings functionally, but Phase 14's PDF check re-uses the logo, so do this before invoicing.",
+            tests: [
+              {
+                t: "Update org profile &amp; currency", steps: [
+                  "Go to Settings",
+                  "Set Org Name = <span class=mono>IBS Haulage Ltd</span>, fill phone/email/address",
+                  "Set Default Currency = <span class=mono>GHS</span>, add footer notes",
+                  "Save"],
+                exp: "“Settings updated successfully.” toast; reloading the page shows the saved values, not the defaults."
+              },
+              {
+                t: "Upload &amp; remove logo", steps: [
+                  "Upload a PNG/JPG under 2MB as the logo, save",
+                  "Reload the page — confirm the preview thumbnail appears",
+                  "Check “Remove current logo”, save, reload"],
+                exp: "Logo preview shows after upload. After removal, no preview and no file left at the previous <span class=mono>storage/app/public/logos/</span> path."
+              },
+              {
+                t: "Itemized-PDF default toggle", steps: ["Toggle “Default to itemized expense breakdown on invoice PDFs” off, save"],
+                exp: "Setting persists; used later as the fallback in Phase 14's PDF download when no explicit mode is requested."
+              }
+            ]
+          },
+          {
+            id: "p3", num: "3", title: "Staff users", deps: ["Phase 1"],
+            intro: "Creates the Finance and Operations accounts used for Phase 4's self-service check and the role-boundary checks in Phase 20 — do this early so those roles exist by the time you need them.",
+            tests: [
+              {
+                t: "Create Finance &amp; Operations users", steps: [
+                  "Users &rarr; New User: full name <span class=mono>QA Finance</span>, username <span class=mono>qa_finance</span>, role Finance, set an initial password",
+                  "Repeat for <span class=mono>QA Ops</span> / <span class=mono>qa_ops</span>, role Operations"],
+                exp: "Both created; redirected to each user's edit page showing the correct role. (Usernames only accept letters, numbers, dashes and underscores — no dots.)"
+              },
+              {
+                t: "New user is forced to change password", steps: ["Log out; log in as qa_finance with the initial password you set"],
+                exp: "Redirected to /change-password, same as the seeded admin was — <code>must_change_password</code> defaults true for admin-created users."
+              },
+              {
+                t: "Edit &amp; duplicate-value validation", steps: [
+                  "As admin, edit QA Finance's phone number, save",
+                  "Try changing QA Ops's username to <span class=mono>qa_finance</span> (already taken)"],
+                exp: "Phone change saves with a success toast. The duplicate-username attempt shows a validation error and does not save."
+              },
+              {
+                t: "Deactivate forces logout &amp; blocks login", steps: [
+                  "Log in as QA Ops in a second browser, leave the session open",
+                  "As admin, Users &rarr; QA Ops &rarr; Deactivate",
+                  "Back in the QA Ops browser, click any link",
+                  "Try logging in again as QA Ops"],
+                exp: "The open session is kicked (session token was nulled). A fresh login attempt shows “Your account has been deactivated. Contact an administrator.”"
+              },
+              { t: "Reactivate restores login", steps: ["As admin, Users &rarr; QA Ops &rarr; Activate", "Log in as QA Ops"], exp: "Login succeeds." },
+              {
+                t: "Manual password reset", steps: ["Users &rarr; QA Finance &rarr; Reset Password &rarr; confirm"],
+                exp: "Success message shows the new plaintext password once (“share securely — this will not be shown again”). Old password no longer works; new one does, and forces a change on next login."
+              },
+              {
+                t: "Self-deactivation is blocked", steps: ["While logged in as admin, open your own admin user's edit page, click Deactivate, confirm"],
+                exp: "Error: “You cannot deactivate your own account.” Admin stays active and logged in."
+              }
+            ]
+          },
+          {
+            id: "p4", num: "4", title: "Staff profile (self-service)", deps: ["Phase 1", "Phase 3 (a non-admin user to test with)"],
+            intro: "Separate from the admin-driven Users module in Phase 3 — every authenticated staff member, any role, manages their own contact details and password here.",
+            tests: [
+              {
+                t: "Any role can view and edit its own profile", steps: [
+                  "Log in as qa_finance (created in Phase 3)",
+                  "Open the user menu &rarr; Profile",
+                  "Update the phone number, save"],
+                exp: "Profile page loads for every role, not just admin. Phone change saves with a “Profile updated successfully.” toast."
+              },
+              {
+                t: "Username and role are not self-editable", steps: ["On the Profile page, confirm there's no username or role field — only full name, email, phone"],
+                exp: "Only an admin can change a user's username or role, via Users &rarr; edit (Phase 3) — self-service Profile deliberately can't touch either."
+              },
+              {
+                t: "Changing your own password requires the current one", steps: [
+                  "Profile &rarr; Change Password: enter a wrong current password, a valid new one, submit",
+                  "Retry with the correct current password"],
+                exp: "Wrong current password is rejected with a validation error and nothing changes. Correct current password succeeds; the new password works on next login, and the old one no longer does."
+              },
+              {
+                t: "New password still enforces complexity", steps: ["Try a new password like <span class=mono>short1</span> (under 8 characters)"],
+                exp: "Rejected by the same 8-char / mixed-case / number rule used everywhere else in the app (change-password, admin-created users, portal profile)."
+              }
+            ]
+          },
+          {
+            id: "p5", num: "5", title: "Locations", deps: ["Phase 1"],
+            intro: "Master data consumed by requests and trips downstream. Create all three now; deletion of a referenced one is tested later in Phase 17 once something actually references it.",
+            tests: [
+              {
+                t: "Create the three locations", steps: [
+                  "Locations &rarr; New: <span class=mono>Tema Port</span>, city Tema, region Greater Accra",
+                  "Repeat for <span class=mono>Kumasi Central Depot</span> (Kumasi, Ashanti)",
+                  "Repeat for <span class=mono>Takoradi Port</span> (Takoradi, Western)"],
+                exp: "All three appear in the active locations list and in the origin/destination pickers used by Requests and Trips."
+              },
+              { t: "Edit a location", steps: ["Edit Kumasi Central Depot, change the region text, save"], exp: "Change persists on reload." },
+              {
+                t: "Deactivate hides it from pickers", steps: [
+                  "Deactivate Takoradi Port",
+                  "Open the New Request form's destination picker"],
+                exp: "Takoradi Port no longer appears as a selectable option (but still recoverable — reactivate it before Phase 13, since Trip B needs it)."
+              },
+              { t: "Reactivate", steps: ["Locations &rarr; Takoradi Port &rarr; Activate"], exp: "Reappears in pickers." },
+              { t: "Delete an unused location succeeds", steps: ["Create a throwaway 4th location, delete it immediately"], exp: "Deleted with no error, since nothing references it yet." }
+            ]
+          },
+          {
+            id: "p6", num: "6", title: "Service types", deps: ["Phase 1"],
+            intro: "Same pattern as Locations. One seeded service type (“General Haulage”) already exists; add a second for use in Phase 12.",
+            tests: [
+              { t: "Create Container Haulage", steps: ["Service Types &rarr; New: name Container Haulage, default rate 150.00/ton, save"], exp: "Appears in the active list and in the Request form's service type picker." },
+              { t: "Edit, deactivate, reactivate", steps: ["Edit its description", "Deactivate it, confirm it drops from the Request form picker", "Reactivate it"], exp: "Each step behaves as in Phase 5's location tests." },
+              { t: "Delete unused service type succeeds", steps: ["Create and immediately delete a throwaway service type"], exp: "Deletes cleanly." }
+            ]
+          },
+          {
+            id: "p7", num: "7", title: "Fleet: trucks", deps: ["Phase 1"],
+            intro: "Truck 1 and Truck 2 are used in every trip from Phase 13 onward — create both now and keep them. Truck 3 exists only to prove deletion works.",
+            tests: [
+              {
+                t: "Create three trucks", steps: [
+                  "Fleet &rarr; Trucks &rarr; New: plate GT-4521-24, Scania R450, flatbed, 30t capacity",
+                  "Repeat: plate GT-8890-24",
+                  "Repeat: plate GT-0000-24 (throwaway)"],
+                exp: "All three show status Available in the trucks list."
+              },
+              { t: "Edit a truck", steps: ["Edit GT-8890-24's capacity, save"], exp: "Change persists." },
+              { t: "Maintenance toggle", steps: ["Set GT-0000-24 to Maintenance", "Set it back to Available"], exp: "Status badge updates each time; unavailable for trip assignment while in Maintenance." },
+              { t: "Deactivate / reactivate", steps: ["Deactivate GT-0000-24", "Reactivate it"], exp: "Drops out of / returns to the active trucks list and trip-assignment picker." },
+              { t: "Delete unused truck succeeds", steps: ["Delete GT-0000-24"], exp: "Deletes cleanly — it has never been assigned to a trip." }
+            ]
+          },
+          {
+            id: "p8", num: "8", title: "Fleet: drivers", deps: ["Phase 1"],
+            intro: "Mirrors Phase 7. Driver 1 and Driver 2 carry through to Phase 13; Driver 3 is disposable.",
+            tests: [
+              {
+                t: "Create three drivers", steps: [
+                  "Fleet &rarr; Drivers &rarr; New: Kwabena Asante, license DL-77213, phone 0244112233",
+                  "Repeat: Yaw Boateng, license DL-77214",
+                  "Repeat: a throwaway 3rd driver"],
+                exp: "All show status Available."
+              },
+              { t: "Edit a driver", steps: ["Edit Yaw Boateng's phone number, save"], exp: "Persists." },
+              { t: "On-leave toggle", steps: ["Set the throwaway driver On Leave", "Set back to Available"], exp: "Status updates; unavailable for assignment while On Leave." },
+              { t: "Deactivate / reactivate", steps: ["Deactivate, then reactivate the throwaway driver"], exp: "Drops out of / returns to pickers." },
+              { t: "Delete unused driver succeeds", steps: ["Delete the throwaway driver"], exp: "Deletes cleanly — never assigned to a trip." }
+            ]
+          },
+          {
+            id: "p9", num: "9", title: "Accounts &amp; cash book", deps: ["Phase 1"],
+            intro: "Trip expenses (Phase 13) and payments (Phase 15) post against these accounts, so balances and transfer mechanics need to be verified before relying on them for financial correctness downstream.",
+            tests: [
+              { t: "Seeded accounts &amp; a new one", steps: ["Accounts index — confirm the 3 seeded accounts each show GHS 0.00", "Create a 4th account, e.g. “Petty Cash — Kumasi Branch”, cash type, opening balance 0"], exp: "New account appears with correct opening balance." },
+              { t: "Edit an account", steps: ["Edit the new account's name, save"], exp: "Persists." },
+              { t: "Transfer between accounts", steps: ["Accounts &rarr; Transfer: GHS 2,000 from Main Bank Account to Office Cash, save"], exp: "Main Bank Account balance decreases by 2,000; Office Cash increases by 2,000. Both sides show a linked transaction in each account's ledger." },
+              { t: "Record a bank charge", steps: ["Open Main Bank Account &rarr; Record Bank Charge: GHS 25.00, note “Monthly fee”"], exp: "Main Bank Account balance decreases by 25.00; a debit transaction appears in its ledger." },
+              {
+                t: "Delete guards", steps: ["Delete the unused Petty Cash account (zero balance, no history) — should succeed", "Try deleting Main Bank Account (has the bank-charge transaction) — should fail"],
+                exp: "First delete succeeds. Second fails: “This account cannot be deleted because it has transaction history. Deactivate it instead.”"
+              }
+            ]
+          },
+          {
+            id: "p10", num: "10", title: "Expense categories", deps: ["Phase 1"],
+            intro: "Trip expenses (Phase 13) log against these. The 9 seeded system categories cover most needs; this phase also proves the admin can add and manage custom ones.",
+            tests: [
+              {
+                t: "Seeded system categories are listed", steps: ["Expense Categories index"],
+                exp: "All 9 seeded categories appear (Fuel, Toll, Meal, Repair, Loading/Offloading, Tyre, Driver Allowance, Ferry/Crossing, Other), each tagged System, status Active."
+              },
+              {
+                t: "Create a custom category", steps: ["New Category: name e.g. “Ferry Toll”", "Save"],
+                exp: "Created, tagged Custom, appears in the Trip Expenses form's category picker (Phase 13) right alongside the system ones."
+              },
+              {
+                t: "Edit, deactivate, reactivate", steps: [
+                  "Edit the custom category's name, save",
+                  "Deactivate it, confirm it drops out of the trip-expense category picker",
+                  "Reactivate it"],
+                exp: "Each step behaves like every other master-data module in this script."
+              },
+              {
+                t: "System categories can't be deleted, only renamed or deactivated", steps: [
+                  "Confirm there's no Delete option next to any System-tagged category in the list",
+                  "Edit a system category's name to something else, then rename it back"],
+                exp: "No Delete link/button ever renders for a System category — deleting one is blocked entirely at the UI level, and server-side too if attempted directly (“System expense categories cannot be deleted. Deactivate it instead.”). Renaming works normally."
+              },
+              {
+                t: "Category referenced by a logged expense can't be deleted", steps: ["After Phase 13 logs an expense against your custom category, try deleting that category"],
+                exp: "Blocked: “This expense category is referenced by one or more logged expenses and cannot be deleted. Deactivate it instead.” (Only testable once Phase 13 has used this category — revisit this check after Phase 13 if you skip ahead.)"
+              },
+              {
+                t: "Unused custom category deletes cleanly", steps: ["Create a second throwaway custom category, delete it immediately without ever using it on an expense"],
+                exp: "Deletes with no error."
+              }
+            ]
+          },
+          {
+            id: "p11", num: "11", title: "Clients &amp; portal users", deps: ["Phase 1"],
+            intro: "Alpha Logistics is the client every request/trip/invoice in this script runs through. Beta Freight exists solely to test cross-tenant isolation in Phase 19.",
+            tests: [
+              { t: "Create Alpha Logistics Ltd", steps: ["Clients &rarr; New: company Alpha Logistics Ltd, contact Ama Owusu, phone, email, currency GHS", "Save"], exp: "Redirected to its show page with an auto-generated code like CLT-2026-0001 — write it down." },
+              { t: "Create Beta Freight Co", steps: ["Repeat for Beta Freight Co, contact Kojo Mensah"], exp: "Second client created with its own CLT code." },
+              { t: "Edit &amp; deactivate/reactivate a client", steps: ["Edit Alpha Logistics's address, save", "Deactivate then reactivate Beta Freight"], exp: "Edits persist; status badge flips each time; deactivated client drops out of the Request-form client picker." },
+              { t: "Create portal users", steps: ["Alpha Logistics &rarr; Portal Users tab &rarr; Add: Ama Owusu, her email, a password", "Beta Freight &rarr; Portal Users tab &rarr; Add: Kojo Mensah, his email, a password"], exp: "Both created and listed as Active under their respective client." },
+              { t: "Reset a portal user's password", steps: ["Alpha Logistics &rarr; Portal Users &rarr; Ama Owusu &rarr; Reset Password, confirm"], exp: "New password shown once in the success message; her old password stops working at /portal/login." },
+              { t: "Deactivate/reactivate a portal user", steps: ["Deactivate Kojo Mensah's portal login, confirm he can't sign in at /portal/login", "Reactivate him"], exp: "Login blocked while inactive, restored after reactivation." },
+              { t: "Delete an unused client succeeds", steps: ["Create and immediately delete a throwaway 3rd client"], exp: "Deletes cleanly — no requests/trips/invoices reference it." }
+            ]
+          },
+          {
+            id: "p12", num: "12", title: "Transport requests &amp; quotes", deps: ["Phase 5 (locations)", "Phase 6 (service type)", "Phase 11 (Alpha Logistics)"],
+            intro: "First step of the operational pipeline: a client's cargo request has to exist, be quoted, and be accepted before it can become a trip in Phase 13.",
+            tests: [
+              {
+                t: "Staff creates a request for Alpha Logistics", steps: [
+                  "Requests &rarr; New: client Alpha Logistics Ltd, service type Container Haulage",
+                  "Origin Tema Port, destination Kumasi Central Depot",
+                  "Cargo “40ft container, textiles”, weight 18 tons",
+                  "Save"], exp: "Created with status Pending and an auto request code like REQ-2026-0001; status-history timeline shows the initial entry."
+              },
+              { t: "Add a quote", steps: ["Open the request &rarr; Add Quote: amount GHS 5,000, valid until +14 days, save"], exp: "Request status flips to Quoted; the quote appears with its own auto QUO code and the correct amount/expiry." },
+              { t: "Editing rules by status", steps: ["Try editing the now-Quoted request's cargo description directly", "Create a second, still-Pending request and edit its cargo description"], exp: "The Quoted request's edit is blocked (“Only pending requests can be edited directly...”). The Pending one edits normally." },
+              { t: "Accept the quote (staff side)", steps: ["On the Quoted request, click Accept"], exp: "Status flips to Accepted. This is the request Phase 13 converts into Trip A." },
+              {
+                t: "Reject &amp; reopen flow", steps: [
+                  "Create a third request, add a quote to it",
+                  "Reject it with a reason",
+                  "Reopen it"],
+                exp: "Status goes Quoted &rarr; Rejected (reason stored, visible on the detail page) &rarr; Pending again after reopening."
+              },
+              {
+                t: "Delete rules by status", steps: ["Delete the now-Pending (reopened) request — should succeed", "Try deleting the Accepted request from earlier — should fail"],
+                exp: "First delete succeeds. Second fails: “Only pending or rejected requests can be deleted.” Keep the Accepted request — it feeds Phase 13."
+              }
+            ]
+          },
+          {
+            id: "p13", num: "13", title: "Trips", deps: ["Phase 7 (trucks)", "Phase 8 (drivers)", "Phase 12 (accepted request)"],
+            intro: "The core dispatch workflow. Builds and disposes of four trips in sequence to cover the happy path, reassignment, expense reversal, and every blocked-transition rule — read the ordering carefully, it's deliberate.",
+            tests: [
+              { t: "Convert the accepted request into Trip A", steps: ["Open the Accepted request from Phase 12 &rarr; Convert to Trip (or Trips &rarr; New with that request pre-filled)", "Assign Truck GT-4521-24 and Driver Kwabena Asante", "Save"], exp: "Trip A created with status Assigned, an auto TRP code, and the request's route/cargo carried over. The source request's status flips to Converted." },
+              { t: "Truck/driver exclusivity is enforced", steps: ["While Trip A is still Assigned, try creating a brand-new trip also using GT-4521-24"], exp: "Blocked: “This truck is already committed to active trip TRP-....” No new trip is created." },
+              { t: "Advance Trip A to completed", steps: ["Trip A &rarr; Start Loading &rarr; Depart (En Route) &rarr; Mark Delivered &rarr; Complete Trip"], exp: "Status moves Assigned&rarr;Loading&rarr;En Route&rarr;Delivered&rarr;Completed, one stage at a time; each move appends a timeline entry. Truck 1 and Driver 1 return to Available afterward." },
+              { t: "Create Trip B directly (no request)", steps: ["Trips &rarr; New (no request_id): Alpha Logistics, Tema Port &rarr; Takoradi Port, Truck GT-4521-24, Driver Kwabena Asante"], exp: "Created Assigned — confirms trips don't require an originating request." },
+              { t: "Reassign mid-flight", steps: ["Advance Trip B to Loading", "Reassign: swap to Truck GT-8890-24 / Driver Yaw Boateng, check “set previous truck/driver available”"], exp: "Trip B now shows the new truck/driver; GT-4521-24 and Kwabena Asante flip back to Available while Trip B is still active." },
+              { t: "Finish Trip B", steps: ["Continue Trip B: En Route &rarr; Delivered &rarr; Complete"], exp: "Reaches Completed on the new truck/driver." },
+              { t: "Create Trip C and log an expense", steps: ["Trips &rarr; New (direct): Tema Port &rarr; Kumasi Central Depot, Truck GT-4521-24, Driver Kwabena Asante", "Open the Expenses tab &rarr; Log Expense: category Fuel (or your Phase 10 custom category, to also cover that phase's referenced-category check), GHS 350.00, account Office Cash"], exp: "Expense recorded against Trip C; the chosen account's balance decreases by 350.00 in its ledger." },
+              { t: "Remove the expense reverses the balance", steps: ["Remove the expense you just logged"], exp: "The account balance is credited back by 350.00 — net zero change from before the expense was logged." },
+              { t: "Invalid transition is blocked", steps: ["Re-log the same expense (needed for the next two checks)", "Try to jump Trip C straight from Assigned to Delivered (skip Loading/En Route) — e.g. via a crafted request if the UI doesn't expose it"], exp: "Blocked: “Cannot transition trip from “assigned” to “delivered”.”" },
+              { t: "Delete is blocked once expenses exist", steps: ["Try deleting Trip C"], exp: "Blocked: “This trip has logged expenses or invoice line items and cannot be deleted. Cancel it instead.”" },
+              { t: "Cancel requires override when expenses exist", steps: ["Try Cancel Trip on Trip C without checking any override option", "Retry, checking the admin-override option this time"], exp: "First attempt blocked: “This trip has 1 logged expense(s). Review them on the Expenses tab; an Admin must override to cancel anyway.” Second attempt succeeds — Trip C is now Cancelled, and Truck 1 / Driver 1 return to Available." },
+              { t: "Plain delete on an untouched trip succeeds", steps: ["Create Trip D (direct): Kumasi Central Depot &rarr; Takoradi Port, Truck GT-4521-24, Driver Kwabena Asante", "Immediately delete it, with no expenses logged and no transitions made"], exp: "Deletes cleanly — proves the delete guard only fires when there's something to protect." }
+            ]
+          },
+          {
+            id: "p14", num: "14", title: "Invoicing", deps: ["Phase 13 (Trip A &amp; Trip B completed)"],
+            intro: "Trip A carries the main happy-path invoice through to Phase 15's payments. Trip B's invoice exercises issue&rarr;cancel and the draft-delete path.",
+            tests: [
+              { t: "Create Invoice 1 from Trip A", steps: ["Invoices &rarr; New: client Alpha Logistics Ltd &rarr; pick Trip A from the eligible-trips list", "Save"], exp: "Draft invoice created with a line item pre-filled from Trip A's value; auto INV code assigned." },
+              { t: "Edit the draft, add a manual line", steps: ["Add a second line item (e.g. “Handling fee”, qty 1, unit price 100.00)", "Save"], exp: "Subtotal/tax/total recalculate to include the new line." },
+              { t: "Issue Invoice 1", steps: ["Click Issue Invoice"], exp: "Status flips Draft&rarr;Issued. Line items are now locked — only due date and notes remain editable." },
+              { t: "Trip A drops out of the eligible-trips list", steps: ["Start a new invoice for Alpha Logistics, open the trip picker"], exp: "Trip A is no longer offered — it's already invoiced on a non-cancelled invoice. Cancel this in-progress invoice creation before continuing." },
+              { t: "PDF modes differ", steps: ["Download Invoice 1's PDF in itemized mode", "Download it again in clean mode"], exp: "Itemized PDF shows a per-trip expense breakdown; clean PDF shows only the invoice line items and totals, no expense detail." },
+              { t: "Delete is blocked once issued", steps: ["Try deleting Invoice 1"], exp: "Blocked: “Only draft invoices can be deleted. Cancel this invoice instead.”" },
+              { t: "Invoice 2 from Trip B, then cancel it", steps: ["Create Invoice 2 from Trip B, issue it", "Cancel Invoice 2 (no payments recorded against it) with a reason"], exp: "Issue succeeds as before. Cancel succeeds since there are no payments; status becomes Cancelled." },
+              { t: "Cancelling frees the trip back up", steps: ["Start a new invoice for Alpha Logistics, open the trip picker"], exp: "Trip B is offered again — a cancelled invoice's trip re-enters the eligible-trips pool. Cancel this in-progress invoice creation before continuing." },
+              { t: "Draft invoice deletes cleanly", steps: ["Create Invoice 3 from Trip B (draft only, don't issue)", "Delete it"], exp: "Deletes with no error — draft invoices are always deletable." }
+            ]
+          },
+          {
+            id: "p15", num: "15", title: "Payments", deps: ["Phase 14 (Invoice 1 issued)", "Phase 9 (accounts)"],
+            intro: "Recording, reversing, and status-syncing payments against Invoice 1.",
+            tests: [
+              { t: "Record a partial payment", steps: ["Open Invoice 1 &rarr; Record Payment: half its total, account Main Bank Account"], exp: "Invoice status flips Issued&rarr;Partially Paid; Main Bank Account's balance increases by the payment amount." },
+              { t: "Record the remaining balance", steps: ["Record a second payment for the rest of Invoice 1's outstanding balance"], exp: "Invoice status flips to Paid; outstanding balance shows GHS 0.00." },
+              { t: "Payment against a non-payable invoice is blocked", steps: ["Try recording a payment against Invoice 2 (Cancelled)"], exp: "Blocked: “Payments can only be recorded against issued or partially paid invoices.”" },
+              { t: "Deleting a payment reverses everything", steps: ["Delete the second (final) payment you recorded on Invoice 1"], exp: "Invoice 1's status reverts to Partially Paid; Main Bank Account's balance is debited back by that payment's amount. Leave Invoice 1 in this state — it's realistic input for Phase 16's reports." }
+            ]
+          },
+          {
+            id: "p16", num: "16", title: "Reports", deps: ["Phases 11–15 (a full data set)"],
+            intro: "Read-only, but only meaningful once there's real data behind every figure — this is why reports comes near the end, not early.",
+            tests: [
+              { t: "Revenue report", steps: ["Reports &rarr; Revenue, for a date range covering today"], exp: "Reflects Invoice 1's total (Invoice 2 is cancelled and should be excluded)." },
+              { t: "Receivables aging", steps: ["Reports &rarr; Receivables Aging"], exp: "Shows Invoice 1's remaining outstanding balance bucketed by age, attributed to Alpha Logistics Ltd." },
+              { t: "Trip profitability", steps: ["Reports &rarr; Trip Profitability"], exp: "Lists Trip A, B, C, D with trip value vs. logged expenses; Trip C shows its GHS 350.00 expense even though it was later cancelled." },
+              { t: "Expenses report", steps: ["Reports &rarr; Expenses, filter by the category used on Trip C"], exp: "Shows the one expense from Trip C." },
+              { t: "Payments report", steps: ["Reports &rarr; Payments"], exp: "Shows exactly one active payment (the first one from Phase 15 — the second was deleted)." },
+              { t: "Fleet utilization", steps: ["Reports &rarr; Fleet Utilization"], exp: "Shows trip counts per truck/driver — GT-4521-24 and Kwabena Asante should show 3 trips (A, C, D); GT-8890-24 / Yaw Boateng show 1 (B, post-reassignment)." },
+              { t: "Client statement + PDF", steps: ["Reports &rarr; Client Statement, select Alpha Logistics Ltd", "Download the PDF"], exp: "Statement lists Invoice 1 (debit) and both payments including the deleted/reversed one as offsetting entries, running balance ends at Invoice 1's outstanding amount. PDF downloads and matches the on-screen statement." }
+            ]
+          },
+          {
+            id: "p17", num: "17", title: "Referential-integrity delete guards", deps: ["Phases 5–15 (referenced records must exist)"],
+            intro: "Negative tests that only make sense once something actually references the master-data record being deleted — that's why they're separated from Phases 5–10's basic CRUD.",
+            tests: [
+              { t: "Location in use can't be deleted", steps: ["Try deleting Tema Port"], exp: "Blocked, message lists what references it (requests and/or trips) and suggests deactivating instead." },
+              { t: "Service type in use can't be deleted", steps: ["Try deleting Container Haulage"], exp: "Blocked with an equivalent “referenced by...deactivate instead” message." },
+              { t: "Truck in use can't be deleted", steps: ["Try deleting GT-4521-24"], exp: "Blocked: “This truck has been assigned to one or more trips and cannot be deleted. Deactivate it instead.”" },
+              { t: "Driver in use can't be deleted", steps: ["Try deleting Kwabena Asante"], exp: "Blocked with the driver equivalent of the truck message." },
+              { t: "Client with history can't be deleted", steps: ["Try deleting Alpha Logistics Ltd"], exp: "Blocked, message enumerates the reasons (requests/trips/invoices) and suggests deactivating instead." },
+              { t: "Account with transaction history can't be deleted", steps: ["Try deleting Office Cash (has the expense debit and transfer credit from Phases 9 &amp; 13)"], exp: "Blocked: “This account cannot be deleted because it has transaction history. Deactivate it instead.”" }
+            ]
+          },
+          {
+            id: "p18", num: "18", title: "Audit log", deps: ["Phases 1–17 (needs history to show)"],
+            intro: "A read-only view over everything the earlier phases just did — verify it actually captured them.",
+            tests: [
+              { t: "Entries exist for the session's activity", steps: ["Audit Log &rarr; browse the unfiltered list"], exp: "Entries for User, Setting, Location, ServiceType, Truck, Driver, Account, ExpenseCategory, Client, TransportRequest, Trip, Invoice, and Payment all appear, alongside login/logout entries." },
+              { t: "Filter by entity, action, user, date", steps: ["Filter Entity = Trip", "Change filter to Action = deactivated", "Filter by a specific staff user", "Set a date range covering today"], exp: "Each filter narrows the list correctly; combining several narrows further; “Clear filters” returns to the full list." },
+              { t: "Before/after diff expands", steps: ["Click View on an “updated” entry (e.g. the Location edit from Phase 5)"], exp: "Row expands to show Before and After JSON panels with the actual field values that changed." }
+            ]
+          },
+          {
+            id: "p19", num: "19", title: "Client portal", deps: ["Phase 11 (portal users)", "Phases 12–15 (Alpha's data)"],
+            intro: "Same data set, viewed as the client would see it. The cross-tenant check needs Beta Freight's portal user from Phase 11.",
+            tests: [
+              { t: "Portal login", steps: ["Go to /portal/login, sign in as Ama Owusu"], exp: "Redirected to /portal/dashboard." },
+              { t: "Dashboard figures match", steps: ["Compare the dashboard's Open Invoice Balance to Invoice 1's outstanding amount from Phase 15"], exp: "Matches exactly. Active Trips count reflects any of Alpha's trips still in a non-terminal status (likely 0, since A/B/C/D are all completed/cancelled by now)." },
+              { t: "My Requests: list, create, view", steps: ["My Requests — confirm the original converted request appears", "New Request: origin Tema Port, destination Kumasi Central Depot, cargo “Portal test cargo”", "Open its detail page"], exp: "New request submitted with status Pending, visible in the list and on staff's Requests index too." },
+              { t: "My Trips shows no financials", steps: ["Open Trip A or Trip B's detail page in the portal"], exp: "Route, truck, driver, cargo, and timeline are visible. Trip value, currency, and expense line items are never shown anywhere on the page." },
+              { t: "My Invoices &amp; PDF is always clean", steps: ["Open Invoice 1's detail page", "Download its PDF, even if you pass <span class=mono>?mode=itemized</span> in the URL by hand"], exp: "On-screen detail shows line items and payments, no internal expense breakdown. The downloaded PDF is always the clean layout regardless of query string — the portal controller hardcodes clean mode." },
+              { t: "Profile &amp; password", steps: ["Portal &rarr; Profile: update phone number, save", "Change password: enter current password + a new compliant one"], exp: "Both save with success messages; new password works on next login." },
+              { t: "Cross-tenant isolation", steps: ["While logged in as Ama Owusu (Alpha), note Beta Freight's request/trip/invoice IDs from the staff side", "Try /portal/requests/{beta's id}, /portal/trips/{beta's id}, /portal/invoices/{beta's id} directly"], exp: "Every one returns 404 — ownership is checked against the authenticated client_id, never trusted from the URL." },
+              { t: "Portal login lockout", steps: ["At /portal/login, submit the wrong password for Ama Owusu five times"], exp: "Same 5-attempts/15-minute lockout behavior as the staff login in Phase 1." }
+            ]
+          },
+          {
+            id: "p20", num: "20", title: "Cross-role authorization matrix", deps: ["Phase 3 (Finance &amp; Operations users)"],
+            intro: "Spot-checks that each role sees only what it should. Do this last, once real records exist to probe against.",
+            tests: [
+              { t: "Finance: allowed areas", steps: ["Log in as qa_finance", "Visit Clients, Invoices, Payments, Accounts, Reports, and your own Profile"], exp: "All accessible and functional." },
+              { t: "Finance: blocked areas", steps: ["Try /requests, /fleet/trucks, /fleet/drivers, /service-types, /users, /settings, /audit-log, /expense-categories"], exp: "Each returns 403 — Finance has no Operations or Administration access. The sidebar doesn't show those sections at all." },
+              { t: "Operations: allowed areas", steps: ["Log in as qa_ops", "Visit Requests, Trips, Trucks, Drivers, Locations, and your own Profile"], exp: "All accessible; can create/transition/cancel trips and manage fleet." },
+              { t: "Operations: blocked areas", steps: ["Try /clients, /invoices, /payments, /accounts, /reports, /users, /settings, /audit-log, /service-types, /expense-categories"], exp: "Each returns 403; sidebar hides Finance, Reports, and Administration sections entirely." },
+              { t: "Operations sees no trip financials", steps: ["As qa_ops, open a completed trip's detail page"], exp: "Trip value, currency, and profit/loss are not shown — only Finance and Admin can see a trip's financial summary." }
+            ]
+          }
+        ];
+
+        /* ---------- Render data reference ---------- */
+        var dataGrid = document.getElementById("dataGrid");
+        DATA_REF.forEach(function (card) {
+          var el = document.createElement("div");
+          el.className = "data-card";
+          var rowsHtml = card.rows.map(function (r) {
+            return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>';
+          }).join("");
+          el.innerHTML = '<h4>' + card.h + '</h4><dl>' + rowsHtml + '</dl>';
+          dataGrid.appendChild(el);
+        });
+
+        /* ---------- Render phases ---------- */
+        var phasesEl = document.getElementById("phases");
+        var railList = document.getElementById("railList");
+        var allCaseIds = [];
+        var caseEls = {};
+
+        PHASES.forEach(function (phase) {
+          var section = document.createElement("section");
+          section.className = "phase";
+          section.id = phase.id;
+
+          var depsHtml = phase.deps.length
+            ? 'Depends on: ' + phase.deps.map(function (d) { return '<b>' + d + '</b>'; }).join(", ")
+            : '<b>No dependencies</b> — safe to start here';
+
+          var head = document.createElement("div");
+          head.innerHTML =
+            '<div class="phase-head"><span class="phase-num">PHASE ' + phase.num + '</span><h2>' + phase.title + '</h2></div>' +
+            '<p class="phase-deps">' + depsHtml + '</p>' +
+            '<p class="phase-intro">' + phase.intro + '</p>';
+          section.appendChild(head);
+
+          var casesWrap = document.createElement("div");
+          casesWrap.className = "cases";
+
+          phase.tests.forEach(function (test, idx) {
+            var caseId = phase.id + "." + (idx + 1);
+            allCaseIds.push(caseId);
+
+            var el = document.createElement("article");
+            el.className = "case";
+            el.dataset.id = caseId;
+
+            var stepsHtml = test.steps.map(function (s) { return '<li>' + s + '</li>'; }).join("");
+
+            el.innerHTML =
+              '<div class="case-head">' +
+              '<span class="case-id mono">' + phase.num + '.' + (idx + 1) + '</span>' +
+              '<span class="case-title">' + test.t + '</span>' +
+              '<span class="case-owner" data-role="owner"></span>' +
+              '<span class="status-pill">Pending</span>' +
+              '<svg class="case-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 6l6 6-6 6"/></svg>' +
+              '</div>' +
+              '<div class="case-body"><div class="case-body-inner">' +
+              '<div class="case-cols">' +
+              '<div><ol class="steps">' + stepsHtml + '</ol></div>' +
+              '<div class="expected"><h5>Expected result</h5><p>' + test.exp + '</p></div>' +
+              '</div>' +
+              '<div class="case-controls">' +
+              '<div class="seg" role="group" aria-label="Result">' +
+              '<button type="button" data-v="pending">Pending</button>' +
+              '<button type="button" data-v="pass">Pass</button>' +
+              '<button type="button" data-v="fail">Fail</button>' +
+              '</div>' +
+              '<input class="notes" type="text" placeholder="Notes (optional)&hellip;" data-role="notes">' +
+              '</div>' +
+              '<div class="case-meta" data-role="meta"></div>' +
+              '</div></div>';
+
+            casesWrap.appendChild(el);
+            caseEls[caseId] = el;
+          });
+
+          section.appendChild(casesWrap);
+          phasesEl.appendChild(section);
+
+          var li = document.createElement("li");
+          li.innerHTML = '<a href="#' + phase.id + '"><span class="dot"></span><span class="rn">P' + phase.num + '</span> ' + phase.title.replace(/<[^>]+>/g, "") + '</a>';
+          railList.appendChild(li);
+        });
+
+        /* ---------- State ---------- */
+        // state[testId] = { status, notes, updated_by, updated_at }
+        var state = {};
+        var LOCAL_KEY = "haulage-qa-runbook-v2-local";
+
+        function loadLocal() {
+          try {
+            var raw = localStorage.getItem(LOCAL_KEY);
+            if (raw) state = JSON.parse(raw) || {};
+          } catch (e) { state = {}; }
+        }
+        function saveLocal() {
+          try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch (e) { }
+        }
+
+        function getRow(id) { return state[id] || { status: "pending", notes: "", updated_by: "" }; }
+
+        function applyCaseUI(id) {
+          var el = caseEls[id];
+          if (!el) return;
+          var row = getRow(id);
+          el.dataset.status = row.status;
+          el.querySelector(".status-pill").textContent = row.status === "pass" ? "Pass" : row.status === "fail" ? "Fail" : "Pending";
+          el.querySelectorAll(".seg button").forEach(function (btn) {
+            btn.classList.toggle("on", btn.dataset.v === row.status);
+          });
+          var notesInput = el.querySelector('[data-role="notes"]');
+          if (document.activeElement !== notesInput) notesInput.value = row.notes || "";
+          var owner = el.querySelector('[data-role="owner"]');
+          owner.textContent = row.updated_by ? ("by " + row.updated_by) : "";
+          var meta = el.querySelector('[data-role="meta"]');
+          meta.textContent = row.updated_at ? ("Last updated " + new Date(row.updated_at).toLocaleString() + (row.updated_by ? " by " + row.updated_by : "")) : "";
+        }
+
+        function updateProgress() {
+          var total = allCaseIds.length;
+          var pass = 0;
+          allCaseIds.forEach(function (id) { if (getRow(id).status === "pass") pass++; });
+          document.getElementById("passCount").textContent = pass;
+          document.getElementById("totalCount").textContent = total;
+          document.getElementById("progressFill").style.width = (total ? (pass / total * 100) : 0) + "%";
+
+          PHASES.forEach(function (phase) {
+            var ids = phase.tests.map(function (_, i) { return phase.id + "." + (i + 1); });
+            var statuses = ids.map(function (id) { return getRow(id).status; });
+            var link = railList.querySelector('a[href="#' + phase.id + '"]');
+            link.classList.remove("all-pass", "has-fail");
+            if (statuses.some(function (s) { return s === "fail"; })) link.classList.add("has-fail");
+            else if (statuses.every(function (s) { return s === "pass"; })) link.classList.add("all-pass");
+          });
+        }
+
+        function renderAll() {
+          allCaseIds.forEach(applyCaseUI);
+          updateProgress();
+        }
+
+        /* ---------- Persistence: Supabase (shared) or localStorage (fallback) ---------- */
+        var notesDebounceTimers = {};
+
+        function persistRow(id, patch) {
+          var row = getRow(id);
+          var next = Object.assign({}, row, patch, { updated_by: testerName(), updated_at: new Date().toISOString() });
+          state[id] = next;
+          applyCaseUI(id);
+          updateProgress();
+
+          if (sb) {
+            sb.from(TABLE).upsert({
+              test_id: id,
+              status: next.status,
+              notes: next.notes,
+              updated_by: next.updated_by,
+              updated_at: next.updated_at
+            }, { onConflict: "test_id" }).then(function (res) {
+              if (res.error) {
+                console.error("Supabase upsert failed:", res.error);
+                setConn("error", "Sync error — check console");
+              }
+            });
+          } else {
+            saveLocal();
+          }
+        }
+
+        function setStatus(id, v) {
+          persistRow(id, { status: v });
+        }
+        function setNotesDebounced(id, v) {
+          state[id] = Object.assign({}, getRow(id), { notes: v });
+          clearTimeout(notesDebounceTimers[id]);
+          notesDebounceTimers[id] = setTimeout(function () {
+            persistRow(id, { notes: v });
+          }, 500);
+        }
+
+        document.querySelectorAll(".case").forEach(function (el) {
+          el.querySelector(".case-head").addEventListener("click", function () {
+            el.classList.toggle("open");
+          });
+          el.querySelectorAll(".seg button").forEach(function (btn) {
+            btn.addEventListener("click", function (ev) {
+              ev.stopPropagation();
+              setStatus(el.dataset.id, btn.dataset.v);
+            });
+          });
+          var notesInput = el.querySelector('[data-role="notes"]');
+          notesInput.addEventListener("click", function (ev) { ev.stopPropagation(); });
+          notesInput.addEventListener("input", function () { setNotesDebounced(el.dataset.id, notesInput.value); });
+        });
+
+        /* ---------- Filters ---------- */
+        document.querySelectorAll(".filter-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            document.querySelectorAll(".filter-btn").forEach(function (b) { b.classList.remove("active"); });
+            btn.classList.add("active");
+            var f = btn.dataset.filter;
+            document.querySelectorAll(".case").forEach(function (el) {
+              var status = getRow(el.dataset.id).status;
+              var show = f === "all" || (f === "pending" && status === "pending") || (f === "fail" && status === "fail");
+              el.style.display = show ? "" : "none";
+            });
+          });
+        });
+
+        /* ---------- Reset (affects everyone when connected) ---------- */
+        document.getElementById("resetBtn").addEventListener("click", function () {
+          var msg = sb
+            ? "Clear ALL pass/fail marks and notes for EVERYONE on the shared backend? This cannot be undone."
+            : "Clear all pass/fail marks and notes in this browser? This does not touch the application itself.";
+          if (!confirm(msg)) return;
+
+          state = {};
+          if (sb) {
+            sb.from(TABLE).delete().neq("test_id", "").then(function (res) {
+              if (res.error) { console.error(res.error); alert("Reset failed: " + res.error.message); }
+              renderAll();
+            });
+          } else {
+            saveLocal();
+            renderAll();
+          }
+        });
+
+        /* ---------- Boot ---------- */
+        if (sb) {
+          setConn("local", "Loading…");
+          sb.from(TABLE).select("*").then(function (res) {
+            if (res.error) {
+              console.error("Supabase load failed:", res.error);
+              setConn("error", "Connection failed — see console / setup banner");
+              document.getElementById("setupBanner").style.display = "flex";
+              loadLocal();
+              renderAll();
+              return;
+            }
+            (res.data || []).forEach(function (row) {
+              state[row.test_id] = { status: row.status, notes: row.notes || "", updated_by: row.updated_by || "", updated_at: row.updated_at };
+            });
+            renderAll();
+            setConn("connected", "Live — shared with your team");
+
+            try {
+              sb.channel("qa_results_changes")
+                .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function (payload) {
+                  if (payload.eventType === "DELETE") {
+                    // Reset case: everything cleared server-side.
+                    state = {};
+                    renderAll();
+                    return;
+                  }
+                  var row = payload.new;
+                  if (!row) return;
+                  state[row.test_id] = { status: row.status, notes: row.notes || "", updated_by: row.updated_by || "", updated_at: row.updated_at };
+                  applyCaseUI(row.test_id);
+                  updateProgress();
+                })
+                .subscribe();
+            } catch (e) {
+              console.warn("Realtime subscription failed, falling back to load-once:", e);
+            }
+          });
+        } else {
+          loadLocal();
+          renderAll();
+        }
+
+      })();
+    </script>
+  </body>
+
+</html>
